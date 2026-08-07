@@ -1,0 +1,26 @@
+# ============================================================
+# INSTALL DUA TAHAP (PENTING, jangan install semua sekaligus)
+# ============================================================
+# TAHAP 1 (wajib install duluan, sendirian):
+#   pip install tfx==1.14.0 --use-deprecated=legacy-resolver
+#
+# TAHAP 2 (setelah tahap 1 sukses, baru install sisanya):
+#   pip install fastapi==0.100.0 "uvicorn[standard]==0.23.2" pydantic==2.1.1 starlette==0.27.0 httpx==0.24.1 prometheus-client==0.17.1
+#
+# Alasan dipisah: tfx menarik banyak sekali dependency google-cloud-*
+# yang tidak kita pakai (kita cuma run pipeline lokal). Kalau semua
+# package di-install dalam satu perintah, pip resolver akan "nyasar"
+# mundur ke versi package sangat lama yang butuh library sistem
+# (geos_c.dll) yang tidak ada di Windows dan gagal di-build.
+
+tfx==1.14.0
+
+fastapi==0.100.0
+uvicorn[standard]==0.23.2
+pydantic==2.1.1
+starlette==0.27.0
+httpx==0.24.1
+prometheus-client==0.17.1
+
+pandas==1.5.3
+scikit-learn==1.2.2

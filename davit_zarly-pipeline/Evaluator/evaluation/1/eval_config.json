@@ -1,0 +1,23 @@
+{
+  "slices": [
+    {
+      "slice_key": {},
+      "metrics": {
+        "binary_accuracy": {
+          "doubleValue": 0.9723
+        },
+        "precision": {
+          "doubleValue": 0.9685
+        },
+        "recall": {
+          "doubleValue": 0.9547
+        },
+        "auc": {
+          "doubleValue": 0.9912
+        }
+      }
+    }
+  ],
+  "model_location": "davit_zarly-pipeline\\Trainer/model/1/serving_model_dir",
+  "blessed": 1
+}

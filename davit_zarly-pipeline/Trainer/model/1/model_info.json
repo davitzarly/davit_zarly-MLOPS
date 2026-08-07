@@ -1,0 +1,6 @@
+{
+  "model_saved": true,
+  "serving_model_dir": "davit_zarly-pipeline\\Trainer/model/1/serving_model_dir",
+  "training_steps": 1000,
+  "eval_steps": 200
+}

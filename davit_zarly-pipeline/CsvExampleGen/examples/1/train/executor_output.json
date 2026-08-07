@@ -1,0 +1,12 @@
+{
+  "splits": [
+    {
+      "name": "train",
+      "pattern": "Split-train/*.gz"
+    },
+    {
+      "name": "eval",
+      "pattern": "Split-eval/*.gz"
+    }
+  ]
+}
