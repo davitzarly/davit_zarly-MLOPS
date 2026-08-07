@@ -1,12 +1,22 @@
 """TFX Transform Module - Preprocessing untuk UNSW-NB15 NIDS.
 
-Modul ini mendefinisikan preprocessing_fn untuk TensorFlow Transform
-yang mencakup normalisasi fitur numerik (Z-score) dan encoding
-fitur kategorikal (Vocabulary-based one-hot encoding).
+Modul ini mendefinisikan ``preprocessing_fn`` untuk TensorFlow Transform
+yang mencakup:
+- Normalisasi fitur numerik dengan Z-score (``tft.scale_to_z_score``)
+- Encoding fitur kategorikal berbasis vocabulary integer
+  (``tft.compute_and_apply_vocabulary``)
+
+Semua transformasi dijalankan di dalam graph TF sehingga konsisten
+antara training dan serving (menghindari training-serving skew).
 """
 
 import tensorflow as tf
 import tensorflow_transform as tft
+
+
+# ---------------------------------------------------------------------------
+# Konstanta fitur
+# ---------------------------------------------------------------------------
 
 NUMERIC_FEATURES = [
     'dur', 'spkts', 'dpkts', 'sbytes', 'dbytes', 'rate',
@@ -15,60 +25,73 @@ NUMERIC_FEATURES = [
     'tcprtt', 'synack', 'ackdat', 'smean', 'dmean',
     'trans_depth', 'response_body_len',
     'ct_src_dport_ltm', 'ct_dst_sport_ltm', 'is_ftp_login',
-    'ct_ftp_cmd', 'ct_flw_http_mthd', 'is_sm_ips_ports'
+    'ct_ftp_cmd', 'ct_flw_http_mthd', 'is_sm_ips_ports',
 ]
 
 CATEGORICAL_FEATURES = ['proto', 'service', 'state']
 
 LABEL_KEY = 'label'
-
 VOCAB_SIZE = 1000
 OOV_SIZE = 1
 
 
-def _normalize_numeric(inputs, outputs, key):
-    """Normalisasi fitur numerik menggunakan Z-score.
+# ---------------------------------------------------------------------------
+# Helper functions
+# ---------------------------------------------------------------------------
+
+def _normalize_numeric(inputs: dict, outputs: dict, key: str) -> None:
+    """Normalisasi satu fitur numerik menggunakan Z-score.
+
+    Nilai non-finite (NaN/Inf) diganti 0 sebelum normalisasi agar
+    pipeline tidak crash pada data yang kotor.
 
     Args:
-        inputs: Dict tensor input.
-        outputs: Dict tensor output.
-        key: Nama fitur.
+        inputs: Dict tensor mentah dari ExampleGen.
+        outputs: Dict tensor hasil transformasi (dimodifikasi in-place).
+        key: Nama fitur numerik yang akan dinormalisasi.
     """
     value = tf.cast(inputs[key], tf.float32)
     value = tf.where(tf.math.is_finite(value), value, tf.zeros_like(value))
     outputs[key + '_xf'] = tft.scale_to_z_score(value)
 
 
-def _encode_categorical(inputs, outputs, key):
-    """Encode fitur kategorikal menggunakan vocabulary + index.
+def _encode_categorical(inputs: dict, outputs: dict, key: str) -> None:
+    """Encode satu fitur kategorikal menjadi integer berbasis vocabulary.
+
+    String di-lowercase dan di-strip sebelum di-encode agar variasi
+    penulisan ('TCP', 'tcp', ' tcp ') diperlakukan sama.
 
     Args:
-        inputs: Dict tensor input.
-        outputs: Dict tensor output.
-        key: Nama fitur.
+        inputs: Dict tensor mentah dari ExampleGen.
+        outputs: Dict tensor hasil transformasi (dimodifikasi in-place).
+        key: Nama fitur kategorikal yang akan di-encode.
     """
     cleaned = tf.strings.lower(tf.strings.strip(inputs[key]))
     indices = tft.compute_and_apply_vocabulary(
         cleaned,
         num_oov_buckets=OOV_SIZE,
-        vocab_filename=key + '_vocab'
+        vocab_filename=key + '_vocab',
     )
     outputs[key + '_xf'] = tf.cast(indices, tf.int64)
 
 
-def preprocessing_fn(inputs):
-    """Transform function untuk TFX pipeline.
+# ---------------------------------------------------------------------------
+# Entry point untuk TFX Transform component
+# ---------------------------------------------------------------------------
+
+def preprocessing_fn(inputs: dict) -> dict:
+    """Fungsi preprocessing utama yang dipanggil oleh TFX Transform.
 
     Melakukan preprocessing terhadap seluruh fitur input:
-    - Fitur numerik: Z-score normalization.
-    - Fitur kategorikal: Vocabulary-based integer encoding.
-    - Label: Diteruskan sebagai integer.
+    - Fitur numerik  : Z-score normalization -> ``<feat>_xf``
+    - Fitur kategorikal: Vocabulary integer encoding -> ``<feat>_xf``
+    - Label          : Diteruskan sebagai ``tf.int64``
 
     Args:
-        inputs: Dict dari tensor input dari ExampleGen.
+        inputs: Dict dari tensor input mentah yang berasal dari ExampleGen.
 
     Returns:
-        Dict dari tensor yang sudah ditransformasi.
+        Dict dari tensor yang sudah ditransformasi, siap dipakai Trainer.
     """
     outputs = {}
 

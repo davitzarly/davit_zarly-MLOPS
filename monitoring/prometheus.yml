@@ -8,5 +8,6 @@ scrape_configs:
   - job_name: "nids-tf-serving"
     scrape_interval: 5s
     metrics_path: /monitoring/prometheus/metrics
+    scheme: https
     static_configs:
-      - targets: ["YOUR_RAILWAY_URL_HERE"]
+      - targets: ["davitzarly-mlops-production.up.railway.app"]

@@ -1,0 +1,48 @@
+version: "3.8"
+
+# ============================================================
+# Stack monitoring: Prometheus + Grafana
+# Untuk TF Serving yang di-deploy di Railway
+# ============================================================
+#
+# Cara menjalankan (dari folder monitoring/):
+#   docker-compose up -d
+#
+# Akses:
+#   Prometheus : http://localhost:9090
+#   Grafana    : http://localhost:3000  (admin / admin)
+
+services:
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: nids_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: nids_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  grafana_data:
