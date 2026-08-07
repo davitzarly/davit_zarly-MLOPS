@@ -91,7 +91,7 @@ serving_model/
 - `POST /v1/models/davit_zarly-model:predict` — prediksi (format JSON)
 - `GET /monitoring/prometheus/metrics` — endpoint metrik Prometheus
 
-**Web app:** `https://YOUR_RAILWAY_URL.up.railway.app`
+**Web app:** `https://davitzarly-mlops-production.up.railway.app/v1/models/davit_zarly-model`
 
 Bukti keberhasilan deployment: lihat `davit_zarly-deployment.png` (respons JSON dari endpoint `/v1/models/davit_zarly-model`).
 
